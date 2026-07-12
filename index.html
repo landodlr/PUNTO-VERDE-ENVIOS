@@ -913,11 +913,7 @@ function enviarWhatsApp() {
 
   const msg = `🛍️ *NUEVO PEDIDO – PUNTO VERDE*\n${'─'.repeat(30)}\n\n👤 *Cliente*\n• Nombre: ${nombre}\n• DNI/CE: ${dni}\n• WhatsApp: +51 ${wa}\n\n${envioInfo}\n\n📅 *Fecha de envío deseada:* ${fechaFmt}${nota ? '\n\n💬 *Nota:* ' + nota : ''}\n\n${'─'.repeat(30)}\n_Enviado desde el formulario Punto Verde_`;
 
-  // Mostrar pantalla de éxito
-  document.getElementById('form-main').style.display = 'none';
-  document.getElementById('success-card').classList.add('show');
-
-  // ── BUG 1 FIX: doble envío (fetch + pixel) para máxima fiabilidad ──
+  // Construir URL de guardado
   const params = new URLSearchParams({
     whatsapp: wa, dni, nombre,
     tipoEntrega: tipoEntrega.toUpperCase(),
@@ -926,19 +922,17 @@ function enviarWhatsApp() {
     fechaEnvio: fecha, nota
   });
   const saveUrl = SCRIPT_URL + '?' + params.toString();
+  const waUrl   = 'https://api.whatsapp.com/send?phone=' + NUMERO_WA + '&text=' + encodeURIComponent(msg);
 
-  // Método 1: fetch GET (más rápido)
-  fetch(saveUrl, { method: 'GET', mode: 'no-cors' }).catch(() => {});
-
-  // Método 2: pixel imagen (respaldo — diferente timing)
-  setTimeout(() => {
-    const pixel = new Image();
-    pixel.src = saveUrl + '&t=' + Date.now();
-    window._lpPixel = pixel;
-  }, 300);
-
-  // Abrir WhatsApp INMEDIATAMENTE (setTimeout bloquea popups en móvil)
-  window.location.href = 'https://api.whatsapp.com/send?phone=' + NUMERO_WA + '&text=' + encodeURIComponent(msg);
+  // Guardar en Sheets primero, luego abrir WhatsApp
+  fetch(saveUrl, { method: 'GET', mode: 'no-cors' })
+    .catch(() => {})
+    .finally(() => {
+      // Mostrar éxito y abrir WhatsApp después de guardar
+      document.getElementById('form-main').style.display = 'none';
+      document.getElementById('success-card').classList.add('show');
+      window.open(waUrl, '_blank');
+    });
 }
 
 
