@@ -451,24 +451,17 @@
             🏪 Punto Verde — Coordinaremos el día y hora de recojo
           </div>
           <div class="info-box">
-            📍 Acércate a nuestra tienda en la fecha acordada con tu DNI y número de pedido.
+            📍 Acércate a nuestra tienda en la fecha acordada con tus datos.
           </div>
           <div class="field">
             <label>Nombre completo <span class="req">*</span></label>
             <input type="text" id="retiro-nombre" placeholder="Como figura en tu DNI">
             <div class="error-msg" id="err-retiro-nombre">Ingresa tu nombre</div>
           </div>
-          <div class="two-col">
-            <div class="field">
-              <label>DNI / CE <span class="req">*</span></label>
-              <input type="text" id="retiro-dni" placeholder="12345678" maxlength="12" inputmode="numeric">
-              <div class="error-msg" id="err-retiro-dni">Ingresa tu DNI</div>
-            </div>
-            <div class="field">
-              <label>WhatsApp <span class="req">*</span></label>
-              <input type="tel" id="retiro-wa" placeholder="9XX XXX XXX" maxlength="9" inputmode="numeric">
-              <div class="error-msg" id="err-retiro-wa">Ingresa tu WhatsApp</div>
-            </div>
+          <div class="field">
+            <label>WhatsApp <span class="req">*</span></label>
+            <input type="tel" id="retiro-wa" placeholder="9XX XXX XXX" maxlength="9" inputmode="numeric">
+            <div class="error-msg" id="err-retiro-wa">Ingresa tu WhatsApp</div>
           </div>
           <div class="field">
             <label>Fecha aproximada de recojo <span class="req">*</span></label>
@@ -851,11 +844,9 @@ function validate() {
 
   if (tipoEntrega === 'retiro') {
     const rNombre = document.getElementById('retiro-nombre').value.trim();
-    const rDni    = document.getElementById('retiro-dni').value.trim();
     const rWa     = document.getElementById('retiro-wa').value.trim();
     const rFecha  = document.getElementById('retiro-fecha').value;
     if (!rNombre) { showErr('err-retiro-nombre', true); ok = false; } else showErr('err-retiro-nombre', false);
-    if (!rDni)    { showErr('err-retiro-dni',    true); ok = false; } else showErr('err-retiro-dni',    false);
     if (!rWa)     { showErr('err-retiro-wa',     true); ok = false; } else showErr('err-retiro-wa',     false);
     if (!rFecha)  { showErr('err-retiro-fecha',  true); ok = false; } else showErr('err-retiro-fecha',  false);
   }
@@ -867,15 +858,17 @@ function validate() {
     if (!dir)  { showErr('err-ddir', true); ok = false; } else showErr('err-ddir', false);
   }
 
-  const nombre = document.getElementById('nombre').value.trim();
-  const dni    = document.getElementById('dni').value.trim();
-  const wa     = document.getElementById('whatsapp').value.trim();
-  const fecha  = document.getElementById('fecha').value;
-
-  if (!nombre) { showErr('err-nombre', true); ok = false; } else showErr('err-nombre', false);
-  if (!dni || dni.length < 8) { showErr('err-dni', true); ok = false; } else showErr('err-dni', false);
-  if (!wa || wa.length < 9)   { showErr('err-wa', true); ok = false; }  else showErr('err-wa', false);
-  if (!fecha) { showErr('err-fecha', true); ok = false; }              else showErr('err-fecha', false);
+  // Paso 3 solo aplica si NO es retiro en tienda
+  if (tipoEntrega !== 'retiro') {
+    const nombre = document.getElementById('nombre').value.trim();
+    const dni    = document.getElementById('dni').value.trim();
+    const wa     = document.getElementById('whatsapp').value.trim();
+    const fecha  = document.getElementById('fecha').value;
+    if (!nombre) { showErr('err-nombre', true); ok = false; } else showErr('err-nombre', false);
+    if (!dni || dni.length < 8) { showErr('err-dni', true); ok = false; } else showErr('err-dni', false);
+    if (!wa || wa.length < 9)   { showErr('err-wa', true); ok = false; }  else showErr('err-wa', false);
+    if (!fecha) { showErr('err-fecha', true); ok = false; }              else showErr('err-fecha', false);
+  }
 
   return ok;
 }
@@ -890,11 +883,21 @@ function enviarWhatsApp() {
     return;
   }
 
-  const nombre = document.getElementById('nombre').value.trim();
-  const dni    = document.getElementById('dni').value.trim();
-  const wa     = document.getElementById('whatsapp').value.trim();
-  const fecha  = document.getElementById('fecha').value;
-  const nota   = document.getElementById('nota').value.trim();
+  // Si es retiro, tomar datos del paso 2; si no, del paso 3
+  let nombre, dni, wa, fecha, nota;
+  if (tipoEntrega === 'retiro') {
+    nombre = document.getElementById('retiro-nombre').value.trim();
+    dni    = '';
+    wa     = document.getElementById('retiro-wa').value.trim();
+    fecha  = document.getElementById('retiro-fecha').value;
+    nota   = document.getElementById('retiro-nota').value.trim();
+  } else {
+    nombre = document.getElementById('nombre').value.trim();
+    dni    = document.getElementById('dni').value.trim();
+    wa     = document.getElementById('whatsapp').value.trim();
+    fecha  = document.getElementById('fecha').value;
+    nota   = document.getElementById('nota').value.trim();
+  }
   const fechaFmt = new Date(fecha + 'T12:00:00').toLocaleDateString('es-PE', {day:'2-digit', month:'long', year:'numeric'});
 
   const NUMERO_WA  = '51972146280';
@@ -912,7 +915,6 @@ function enviarWhatsApp() {
   } else if (tipoEntrega === 'retiro') {
     transportista = 'RETIRO EN TIENDA';
     const rNombre = document.getElementById('retiro-nombre').value.trim();
-    const rDni    = document.getElementById('retiro-dni').value.trim();
     const rWa     = document.getElementById('retiro-wa').value.trim();
     const rFecha  = document.getElementById('retiro-fecha').value;
     const rNota   = document.getElementById('retiro-nota').value.trim();
@@ -924,7 +926,7 @@ function enviarWhatsApp() {
     fecha     = rFecha;
     agencia   = 'RETIRO EN TIENDA';
     direccion = 'Punto Verde - Tienda';
-    envioInfo = `🏪 *RETIRO EN TIENDA*\n👤 Nombre: ${rNombre}\n🪪 DNI: ${rDni}\n📱 WhatsApp: +51 ${rWa}\n📅 Fecha de recojo: ${rFechaFmt}${rNota ? '\n💬 Nota: ' + rNota : ''}`;
+    envioInfo = `🏪 *RETIRO EN TIENDA*\n👤 Nombre: ${rNombre}\n📱 WhatsApp: +51 ${rWa}\n📅 Fecha de recojo: ${rFechaFmt}${rNota ? '\n💬 Nota: ' + rNota : ''}`;
   } else {
     transportista = 'DELIVERY';
     ciudad        = document.getElementById('delivery-distrito').value;
@@ -976,7 +978,12 @@ function selectDelivery(tipo) {
   if (tipo === 'retiro')  document.getElementById('sec-olva').classList.add('visible');
   if (tipo === 'delivery') document.getElementById('sec-delivery').classList.add('visible');
 
-  document.getElementById('step3-section').classList.add('visible');
+  // Retiro no necesita paso 3 (ya captura los datos en el paso 2)
+  if (tipo === 'retiro') {
+    document.getElementById('step3-section').classList.remove('visible');
+  } else {
+    document.getElementById('step3-section').classList.add('visible');
+  }
   updateSteps(2);
   setTimeout(() => document.getElementById('step2-section').scrollIntoView({behavior:'smooth', block:'start'}), 100);
 }
